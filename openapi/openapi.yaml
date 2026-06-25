@@ -1,0 +1,240 @@
+openapi: 3.1.0
+info:
+  title: "Subscription aggregator"
+  version: 0.0.1
+paths:
+  /api/v1/subscriptions:
+    get:
+      description: Получение списка подписок
+      parameters:
+        - name: start_date
+          in: query
+          description: Начало периода подписок
+          example: "04-2025"
+          schema:
+            type: string
+        - name: end_date
+          in: query
+          description: Конец периода подписок
+          example: "12-2025"
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          description: Id пользователя, для которого достаем подписки
+          example: "60601fee-2bf1-4721-ae6f-7636e79a0cba"
+          schema:
+            type: string
+        - name: service_name
+          in: query
+          description: Название сервиса
+          example: "Yandex Plus"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Успешное получение списка подписок
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/collection/subscription"
+              examples:
+                base:
+                  value:
+                    data:
+                      items:
+                        - id: 1
+                          service_name: "Yandex Plus"
+                          price: 400
+                          user_id: "60601fee-2bf1-4721-ae6f-7636e79a0cba"
+                          start_date: "07-2025"
+                        - id: 2
+                          service_name: "Spotify"
+                          price: 1000
+                          user_id: "60601fee-2bf1-4721-ae6f-7636e79a0cba"
+                          start_date: "09-2025"
+
+    post:
+      description: Создание подписки
+      requestBody:
+        $ref: "#/components/requestBodies/create"
+      responses:
+        "200":
+          description: Успешное создание подписки
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/member/subscription"
+              examples:
+                base:
+                  value:
+                    data:
+                      id: 1
+                      service_name: "Yandex Plus"
+                      price: 400
+                      user_id: "60601fee-2bf1-4721-ae6f-7636e79a0cba"
+                      start_date: "07-2025"
+
+  /api/v1/subscriptions/{id}:
+    get:
+      description: Получение подписки по id
+      responses:
+        "200":
+          description: Успешное получение подписки
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/member/subscription"
+    patch:
+      description: Обновление подписки по id
+      requestBody:
+        $ref: "#/components/requestBodies/create"
+      responses:
+        "200":
+          description: Успешное обновление подписки
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/member/subscription"
+              examples:
+                base:
+                  value:
+                    data:
+                      id: 1
+                      service_name: "Yandex Plus"
+                      price: 400
+                      user_id: "60601fee-2bf1-4721-ae6f-7636e79a0cba"
+                      start_date: "07-2025"
+
+    delete:
+      description: Удаление подписки по id
+      responses:
+        "204":
+          description: Успешное удаление подписки по id
+
+    parameters:
+      - name: id
+        in: path
+        description: id подписки
+        required: true
+        example: 1
+        schema:
+          type: string
+
+  /api/v1/subscriptions/agg:
+    get:
+      summary: Получение суммарной стоимости подписок
+      description: Получение суммарной стоимости подписок за выбранный период с фильтрацией по id пользователя и названию подписки
+      parameters:
+        - name: start_date
+          in: query
+          description: Начало периода подписок
+          example: "04-2025"
+          schema:
+            type: string
+        - name: end_date
+          in: query
+          description: Конец периода подписок
+          example: "12-2025"
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          description: Id пользователя, для которого достаем подписки
+          example: "60601fee-2bf1-4721-ae6f-7636e79a0cba"
+          schema:
+            type: string
+        - name: service_name
+          in: query
+          description: Название сервиса
+          example: "Yandex Plus"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Успешное получение суммарной стоимости подписок
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/member/subscription_agg"
+              examples:
+                base:
+                  value:
+                    data:
+                      items:
+                        - sum_price: 1400
+
+components:
+  schemas:
+    member:
+      subscription:
+        type: object
+        properties:
+          data:
+            $ref: "#/components/schemas/subscription"
+
+      subscription_agg:
+        type: object
+        properties:
+          data:
+            $ref: "#/components/schemas/subscription_agg"
+
+    collection:
+      subscription:
+        type: object
+        properties:
+          data:
+            type: object
+            properties:
+              items:
+                type: array
+                items:
+                  $ref: "#/components/schemas/subscription"
+
+    subscription:
+      type: object
+      properties:
+        id:
+          type: integer
+        service_name:
+          type: string
+        price:
+          type: integer
+        user_id:
+          type: integer
+          format: uuid
+        start_date:
+          type: string
+          format: date
+
+    subscription_agg:
+      type: object
+      properties:
+        sum_price:
+          type: integer
+
+  requestBodies:
+    create:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              service_name:
+                type: string
+              price:
+                type: integer
+              user_id:
+                type: integer
+                format: uuid
+              start_date:
+                type: string
+                format: date
+          examples:
+            base:
+              value:
+                data:
+                  service_name: "Yandex Plus"
+                  price: 400
+                  user_id: "60601fee-2bf1-4721-ae6f-7636e79a0cba"
+                  start_date: "07-2025"
