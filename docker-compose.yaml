@@ -26,7 +26,7 @@ services:
     image: migrate/migrate:latest
     command: [
       "-path", "/migrations",
-      "-database", "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/${POSTGRES_DB}?sslmode=${DB_SSLMODE}",
+      "-database", "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:${DB_PORT}/${POSTGRES_DB}?sslmode=${DB_SSLMODE}",
       "up"
     ]
     volumes:
@@ -47,7 +47,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "${DB_PORT}:5432"
+      - "${DB_PORT}:${DB_PORT}"
     volumes:
       - subscriptions-data:/var/lib/postgresql
     healthcheck:
