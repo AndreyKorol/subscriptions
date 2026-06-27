@@ -15,22 +15,22 @@ func main() {
     ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
     defer cancel()
 
+    logger := slog.Default()
+
     cfg := config.Load()
 
     pool, err := pgxpool.New(ctx, cfg.DSN())
     if err != nil {
-        slog.Error("connection to database failed", "error", err)
+        logger.Error("connection to database failed", "error", err)
         return
     }
 
     services := services.NewManager(pool)
-    logger := slog.Default()
-
     subController := controllers.NewSubscriptionsController(ctx, services, logger)
 
     mux := http.NewServeMux()
     mux.HandleFunc("GET /subscriptions", subController.Query)
-    // mux.HandleFunc("POST /subscriptions", subController.Create)
+    mux.HandleFunc("POST /subscriptions", subController.Create)
     // mux.HandleFunc("GET /subscriptions/{id}", subController.Show)
     // mux.HandleFunc("PATCH /subscriptions/{id}", subController.Update)
     // mux.HandleFunc("DELETE /subscriptions/{id}", subController.Destroy)

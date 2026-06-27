@@ -57,9 +57,27 @@ func (c *SubscriptionsController) Query(w http.ResponseWriter, r *http.Request) 
     
 // }
 
-// func (c *SubscriptionsController) Create(w http.ResponseWriter, r *http.Request) {
-    
-// }
+func (c *SubscriptionsController) Create(w http.ResponseWriter, r *http.Request) {
+    var subscription models.Subscription
+
+    err := json.NewDecoder(r.Body).Decode(&subscription)
+    if err != nil {
+        http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+        return
+    }
+
+    sub, err := c.services.SubService.Create(r.Context(), &subscription)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+
+    resp := Data{Data: sub}
+    json.NewEncoder(w).Encode(resp)
+}
 
 // func (c *SubscriptionsController) Update(w http.ResponseWriter, r *http.Request) {
     
