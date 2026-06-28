@@ -5,6 +5,7 @@ import(
     "log/slog"
     "context"
     "encoding/json"
+    "strconv"
     "github.com/google/uuid"
     "github.com/AndreyKorol/subscriptions/internal/models"
     "github.com/AndreyKorol/subscriptions/internal/services"
@@ -53,9 +54,27 @@ func (c *SubscriptionsController) Query(w http.ResponseWriter, r *http.Request) 
     json.NewEncoder(w).Encode(resp)
 }
 
-// func (c *SubscriptionsController) Show(w http.ResponseWriter, r *http.Request) {
-    
-// }
+func (c *SubscriptionsController) Show(w http.ResponseWriter, r *http.Request) {
+    id, err := strconv.Atoi(r.PathValue("id"))
+    if err != nil || id < 1 {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+    }
+
+    sub, err := c.services.SubService.Show(r.Context(), uint(id))
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    if sub == nil {
+        http.Error(w, err.Error(), http.StatusNotFound)
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+
+    resp := Data{Data: sub}
+    json.NewEncoder(w).Encode(resp)
+}
 
 func (c *SubscriptionsController) Create(w http.ResponseWriter, r *http.Request) {
     var subscription models.Subscription

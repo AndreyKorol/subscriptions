@@ -21,19 +21,19 @@ func (s *SubscriptionService) Query(ctx context.Context, filters models.Filter) 
     return s.repo.Query(ctx, filters)
 }
 
-// func (s *SubscriptionService) Show(ctx context.Context, id int) (*models.Subscription, error) {
-//     return s.repo.Show(ctx, id)
-// }
+func (s *SubscriptionService) Show(ctx context.Context, id uint) (*models.Subscription, error) {
+    return s.repo.Show(ctx, id)
+}
 
 func (s *SubscriptionService) Create(ctx context.Context, subscription *models.Subscription) (*models.Subscription, error) {
     return s.repo.Create(ctx, subscription)
 }
 
-// func (s *SubscriptionService) Update(ctx context.Context, id int, subscription *models.Subscription) (*models.Subscription, error) {
+// func (s *SubscriptionService) Update(ctx context.Context, id uint, subscription *models.Subscription) (*models.Subscription, error) {
 //     return s.repo.Update(ctx, id, subscription)
 // }
 
-// func (s *SubscriptionService) Destroy(ctx context.Context, id int) error {
+// func (s *SubscriptionService) Destroy(ctx context.Context, id uint) error {
 //     return s.repo.Destroy(ctx, id)
 // }
 
