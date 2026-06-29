@@ -67,6 +67,7 @@ func (c *SubscriptionsController) Show(w http.ResponseWriter, r *http.Request) {
     }
     if sub == nil {
         http.Error(w, err.Error(), http.StatusNotFound)
+        return
     }
 
     w.Header().Set("Content-Type", "application/json")
@@ -77,11 +78,16 @@ func (c *SubscriptionsController) Show(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *SubscriptionsController) Create(w http.ResponseWriter, r *http.Request) {
-    var createSubRequest CreateSubscriptionRequest
+    createSubRequest := &CreateSubscriptionRequest{}
 
     err := json.NewDecoder(r.Body).Decode(createSubRequest)
     if err != nil {
         http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+        return
+    }
+
+    if err = validator.New().Struct(createSubRequest); err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
         return
     }
 
@@ -104,9 +110,54 @@ func (c *SubscriptionsController) Create(w http.ResponseWriter, r *http.Request)
     json.NewEncoder(w).Encode(resp)
 }
 
-// func (c *SubscriptionsController) Update(w http.ResponseWriter, r *http.Request) {
-    
-// }
+func (c *SubscriptionsController) Update(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	if err := validator.New().Var(id, "gte=1"); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	updateSubRequest := &UpdateSubscriptionRequest{}
+	err = json.NewDecoder(r.Body).Decode(updateSubRequest)
+	if err != nil {
+		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+    if err = validator.New().Struct(updateSubRequest); err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+	existingSub, err := c.services.SubService.Show(r.Context(), uint(id))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if existingSub == nil {
+		http.Error(w, "subscription not found", http.StatusNotFound)
+		return
+	}
+
+	updateSubRequest.ApplyTo(existingSub)
+
+	sub, err := c.services.SubService.Update(r.Context(), existingSub)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	resp := Data{Data: sub}
+	json.NewEncoder(w).Encode(resp)
+}
 
 // func (c *SubscriptionsController) Destroy(w http.ResponseWriter, r *http.Request) {
     

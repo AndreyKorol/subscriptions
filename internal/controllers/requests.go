@@ -2,7 +2,6 @@ package controllers
 
 import(
     "errors"
-    "github.com/go-playground/validator/v10"
     "github.com/AndreyKorol/subscriptions/internal/models"
 )
 
@@ -13,20 +12,28 @@ type CreateSubscriptionRequest struct {
     StartDate   *string `json:"start_date"   validate:"required,datetime=01-2006"`
 }
 
-func (r *CreateSubscriptionRequest) Validate() error {
-    return validator.New().Struct(r)
-}
-
 func (r *CreateSubscriptionRequest) ToModel() (*models.Subscription, error) {
-    if err := r.Validate(); err != nil {
-        return nil, errors.Join(errors.New("invalid request for conversion"), err)
+    sub := &models.Subscription{}
+
+    if r.ServiceName == nil {
+        return nil, errors.New("ServiceName is missing")
     }
-    return &models.Subscription{
-        ServiceName: *r.ServiceName,
-        Price:       *r.Price,
-        UserId:      *r.UserId,
-        StartDate:   *r.StartDate,
-    }, nil
+    if r.Price == nil {
+        return nil, errors.New("Price is missing")
+    }
+    if r.UserId == nil {
+        return nil, errors.New("UserId is missing")
+    }
+    if r.StartDate == nil {
+        return nil, errors.New("StartDate is missing")
+    }
+
+    sub.ServiceName = *r.ServiceName
+    sub.Price = *r.Price
+    sub.UserId = *r.UserId
+    sub.StartDate = *r.StartDate
+
+    return sub, nil
 }
 
 type UpdateSubscriptionRequest struct {
@@ -36,18 +43,17 @@ type UpdateSubscriptionRequest struct {
     StartDate   *string `json:"start_date"   validate:"omitempty,datetime=01-2006"`
 }
 
-func (r *UpdateSubscriptionRequest) Validate() error {
-    return validator.New().Struct(r)
-}
-
-func (r *UpdateSubscriptionRequest) ToModel() (*models.Subscription, error) {
-    if err := r.Validate(); err != nil {
-        return nil, errors.Join(errors.New("invalid request for conversion"), err)
-    }
-    return &models.Subscription{
-        ServiceName: *r.ServiceName,
-        Price:       *r.Price,
-        UserId:      *r.UserId,
-        StartDate:   *r.StartDate,
-    }, nil
+func (r *UpdateSubscriptionRequest) ApplyTo(sub *models.Subscription) {
+	if r.ServiceName != nil {
+		sub.ServiceName = *r.ServiceName
+	}
+	if r.Price != nil {
+		sub.Price = *r.Price
+	}
+	if r.UserId != nil {
+		sub.UserId = *r.UserId
+	}
+	if r.StartDate != nil {
+		sub.StartDate = *r.StartDate
+	}
 }

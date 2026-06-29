@@ -61,7 +61,8 @@ func (r *SubscriptionRepo) Show(ctx context.Context, id uint) (*models.Subscript
                 user_id,
                 TO_CHAR(start_date, 'MM-YYYY') AS start_date
         FROM subscriptions
-        WHERE subscriptions.id = $1`,
+        WHERE subscriptions.id = $1
+        ORDER BY subscriptions.id`,
         id,
     )
     if err != nil {
@@ -96,9 +97,26 @@ func (r *SubscriptionRepo) Create(ctx context.Context, subscription *models.Subs
     return sub, nil
 }
 
-// func (r *SubscriptionRepo) Update(ctx context.Context, id uint, subscription *models.Subscription) (*models.Subscription, error) {
+func (r *SubscriptionRepo) Update(ctx context.Context, subscription *models.Subscription) (*models.Subscription, error) {
+    rows, err := r.pool.Query(
+        ctx,
+        `UPDATE subscriptions
+         SET service_name = $1, price = $2, user_id = $3, start_date = TO_DATE($4, 'MM-YYYY')
+         WHERE subscriptions.id = $5
+         RETURNING id, service_name, price, user_id, TO_CHAR(start_date, 'MM-YYYY') AS start_date;`,
+        subscription.ServiceName, subscription.Price, subscription.UserId, subscription.StartDate, subscription.Id,
+    )
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
 
-// }
+    sub, err := pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByName[models.Subscription])
+    if err != nil {
+        return nil, err
+    }
+    return sub, nil
+}
 
 // func (r *SubscriptionRepo) Destroy(ctx context.Context, id uint) error {
 

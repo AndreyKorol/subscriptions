@@ -29,9 +29,9 @@ func (s *SubscriptionService) Create(ctx context.Context, subscription *models.S
     return s.repo.Create(ctx, subscription)
 }
 
-// func (s *SubscriptionService) Update(ctx context.Context, id uint, subscription *models.Subscription) (*models.Subscription, error) {
-//     return s.repo.Update(ctx, id, subscription)
-// }
+func (s *SubscriptionService) Update(ctx context.Context, subscription *models.Subscription) (*models.Subscription, error) {
+    return s.repo.Update(ctx, subscription)
+}
 
 // func (s *SubscriptionService) Destroy(ctx context.Context, id uint) error {
 //     return s.repo.Destroy(ctx, id)

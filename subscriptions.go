@@ -32,7 +32,7 @@ func main() {
     mux.HandleFunc("GET /subscriptions", subController.Index)
     mux.HandleFunc("POST /subscriptions", subController.Create)
     mux.HandleFunc("GET /subscriptions/{id}", subController.Show)
-    // mux.HandleFunc("PATCH /subscriptions/{id}", subController.Update)
+    mux.HandleFunc("PATCH /subscriptions/{id}", subController.Update)
     // mux.HandleFunc("DELETE /subscriptions/{id}", subController.Destroy)
     // mux.HandleFunc("GET /subscriptions/agg", subController.Aggregate)
 
