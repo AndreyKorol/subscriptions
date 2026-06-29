@@ -4,9 +4,10 @@ import(
     "net/http"
     "log/slog"
     "context"
-    "encoding/json"
     "strconv"
-    "github.com/google/uuid"
+    "encoding/json"
+    "github.com/gorilla/schema"
+    "github.com/go-playground/validator/v10"
     "github.com/AndreyKorol/subscriptions/internal/models"
     "github.com/AndreyKorol/subscriptions/internal/services"
 )
@@ -25,23 +26,16 @@ func NewSubscriptionsController(ctx context.Context, services *services.Manager,
     }
 }
 
-func (c *SubscriptionsController) Query(w http.ResponseWriter, r *http.Request) {
-    values := r.URL.Query()
+func (c *SubscriptionsController) Index(w http.ResponseWriter, r *http.Request) {
+    filters := models.Filter{}
+    schema.NewDecoder().Decode(&filters, r.URL.Query())
 
-    uuid, err := uuid.Parse(values.Get("user_id"))
-    if err != nil {
+    if err := validator.New().Struct(filters); err != nil {
         http.Error(w, err.Error(), http.StatusBadRequest)
         return
     }
 
-    filters := models.Filter{
-        UserId: uuid,
-        ServiceName: values.Get("service_name"),
-        StartDate: values.Get("start_date"),
-        EndDate: values.Get("end_date"),
-    }
-
-    subs, err := c.services.SubService.Query(r.Context(), filters)
+    subs, err := c.services.SubService.Index(r.Context(), filters)
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
@@ -55,9 +49,15 @@ func (c *SubscriptionsController) Query(w http.ResponseWriter, r *http.Request) 
 }
 
 func (c *SubscriptionsController) Show(w http.ResponseWriter, r *http.Request) {
-    id, err := strconv.Atoi(r.PathValue("id"))
-    if err != nil || id < 1 {
+    idStr := r.PathValue("id")
+    id, err := strconv.Atoi(idStr)
+    if err != nil {
+        http.Error(w, "invalid id", http.StatusBadRequest)
+        return
+    }
+    if err := validator.New().Var(id, "gte=1"); err != nil {
         http.Error(w, err.Error(), http.StatusBadRequest)
+        return
     }
 
     sub, err := c.services.SubService.Show(r.Context(), uint(id))
@@ -77,15 +77,21 @@ func (c *SubscriptionsController) Show(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *SubscriptionsController) Create(w http.ResponseWriter, r *http.Request) {
-    var subscription models.Subscription
+    var createSubRequest CreateSubscriptionRequest
 
-    err := json.NewDecoder(r.Body).Decode(&subscription)
+    err := json.NewDecoder(r.Body).Decode(createSubRequest)
     if err != nil {
         http.Error(w, "Invalid JSON body", http.StatusBadRequest)
         return
     }
 
-    sub, err := c.services.SubService.Create(r.Context(), &subscription)
+    subscription, err := createSubRequest.ToModel()
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    sub, err := c.services.SubService.Create(r.Context(), subscription)
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return

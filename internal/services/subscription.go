@@ -3,8 +3,8 @@ package services
 import(
     "context"
     "github.com/jackc/pgx/v5/pgxpool"
-    "github.com/AndreyKorol/subscriptions/internal/models"
     "github.com/AndreyKorol/subscriptions/internal/repos"
+    "github.com/AndreyKorol/subscriptions/internal/models"
 )
 
 type SubscriptionService struct {
@@ -17,8 +17,8 @@ func NewSubscriptionService(pool *pgxpool.Pool) *SubscriptionService {
     }
 }
 
-func (s *SubscriptionService) Query(ctx context.Context, filters models.Filter) ([]*models.Subscription, error) {
-    return s.repo.Query(ctx, filters)
+func (s *SubscriptionService) Index(ctx context.Context, filters models.Filter) ([]*models.Subscription, error) {
+    return s.repo.Index(ctx, filters)
 }
 
 func (s *SubscriptionService) Show(ctx context.Context, id uint) (*models.Subscription, error) {

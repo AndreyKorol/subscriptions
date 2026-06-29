@@ -29,7 +29,7 @@ func main() {
     subController := controllers.NewSubscriptionsController(ctx, services, logger)
 
     mux := http.NewServeMux()
-    mux.HandleFunc("GET /subscriptions", subController.Query)
+    mux.HandleFunc("GET /subscriptions", subController.Index)
     mux.HandleFunc("POST /subscriptions", subController.Create)
     mux.HandleFunc("GET /subscriptions/{id}", subController.Show)
     // mux.HandleFunc("PATCH /subscriptions/{id}", subController.Update)
