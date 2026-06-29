@@ -1,12 +1,13 @@
 package repos
 
 import(
+    "time"
+    "errors"
     "context"
     "github.com/AndreyKorol/subscriptions/internal/models"
     "github.com/huandu/go-sqlbuilder"
     "github.com/jackc/pgx/v5/pgxpool"
     "github.com/jackc/pgx/v5"
-    "time"
 )
 
 type SubscriptionRepo struct {
@@ -118,9 +119,21 @@ func (r *SubscriptionRepo) Update(ctx context.Context, subscription *models.Subs
     return sub, nil
 }
 
-// func (r *SubscriptionRepo) Destroy(ctx context.Context, id uint) error {
-
-// }
+func (r *SubscriptionRepo) Destroy(ctx context.Context, id uint) error {
+    result, err := r.pool.Exec(
+        ctx,
+        `DELETE FROM subscriptions
+         WHERE subscriptions.id = $1;`,
+        id,
+    )
+    if err != nil {
+        return err
+    }
+    if result.RowsAffected() == 0 {
+        return errors.New("No rows affected")
+    }
+    return nil
+}
 
 // func (r *SubscriptionRepo) Aggregate(ctx context.Context, filters models.Filter) (*models.AggSubscriptions, error) {
 

@@ -159,9 +159,26 @@ func (c *SubscriptionsController) Update(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(resp)
 }
 
-// func (c *SubscriptionsController) Destroy(w http.ResponseWriter, r *http.Request) {
-    
-// }
+func (c *SubscriptionsController) Destroy(w http.ResponseWriter, r *http.Request) {
+    idStr := r.PathValue("id")
+    id, err := strconv.Atoi(idStr)
+    if err != nil {
+        http.Error(w, "invalid id", http.StatusBadRequest)
+        return
+    }
+    if err = validator.New().Var(id, "gte=1"); err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    err = c.services.SubService.Destroy(r.Context(), uint(id))
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    w.WriteHeader(http.StatusNoContent)
+}
 
 // func (c *SubscriptionsController) Aggregate(w http.ResponseWriter, r *http.Request) {
     

@@ -33,9 +33,9 @@ func (s *SubscriptionService) Update(ctx context.Context, subscription *models.S
     return s.repo.Update(ctx, subscription)
 }
 
-// func (s *SubscriptionService) Destroy(ctx context.Context, id uint) error {
-//     return s.repo.Destroy(ctx, id)
-// }
+func (s *SubscriptionService) Destroy(ctx context.Context, id uint) error {
+    return s.repo.Destroy(ctx, id)
+}
 
 // func (s *SubscriptionService) Aggregate(ctx context.Context, filters models.Filter) (*models.AggSubscriptions, error) {
 //     return s.repo.Aggregate(ctx, filters)
