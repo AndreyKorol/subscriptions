@@ -1,10 +1,11 @@
 package main
 
 import(
+    "os"
+    "time"
+    "context"
     "net/http"
     "log/slog"
-    "context"
-    "time"
     "github.com/jackc/pgx/v5/pgxpool"
     "github.com/AndreyKorol/subscriptions/internal/config"
     "github.com/AndreyKorol/subscriptions/internal/services"
@@ -15,17 +16,21 @@ func main() {
     ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
     defer cancel()
 
-    logger := slog.Default()
-
     cfg := config.Load()
+
+    logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.AppLogLevel}))
+    slog.SetDefault(logger)
+
+    logger.Info("config loaded", "env", cfg.AppEnv, "port", cfg.AppPort)
 
     pool, err := pgxpool.New(ctx, cfg.DSN())
     if err != nil {
         logger.Error("connection to database failed", "error", err)
         return
     }
+    logger.Info("connected to database")
 
-    services := services.NewManager(pool)
+    services := services.NewManager(pool, logger)
     subController := controllers.NewSubscriptionsController(ctx, services, logger)
 
     mux := http.NewServeMux()
@@ -37,12 +42,13 @@ func main() {
     mux.HandleFunc("GET /subscriptions/agg", subController.Aggregate)
 
     s := http.Server{
-        Addr: cfg.Addr(),
-        Handler: mux,
+        Addr:    cfg.Addr(),
+        Handler: controllers.LoggingMiddleware(logger, mux),
     }
 
+    logger.Info("server starting", "addr", cfg.Addr())
+
     if err := s.ListenAndServe(); err != nil {
-        slog.Error("server failed", "error", err)
-        return
+        logger.Error("server failed", "error", err)
     }
 }
