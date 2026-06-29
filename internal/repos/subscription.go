@@ -135,6 +135,39 @@ func (r *SubscriptionRepo) Destroy(ctx context.Context, id uint) error {
     return nil
 }
 
-// func (r *SubscriptionRepo) Aggregate(ctx context.Context, filters models.Filter) (*models.AggSubscriptions, error) {
+func (r *SubscriptionRepo) Aggregate(ctx context.Context, filters models.Filter) (*models.AggSubscriptions, error) {
+    sb := sqlbuilder.PostgreSQL.NewSelectBuilder()
+    sb.Select("SUM(price)::bigint AS sum_price")
+    sb.From("subscriptions")
 
-// }
+    if filters.UserId != nil {
+        sb.Where(sb.Equal("user_id", *filters.UserId))
+    }
+    if filters.ServiceName != nil {
+        sb.Where(sb.Equal("service_name", *filters.ServiceName))
+    }
+    if filters.StartDate != nil {
+        t, _ := time.Parse("01-2006", *filters.StartDate)
+        sb.Where(sb.GE("start_date", t))
+    }
+    if filters.EndDate != nil {
+        t, _ := time.Parse("01-2006", *filters.EndDate)
+        sb.Where(sb.LE("start_date", t))
+    }
+
+    sb.Limit(1)
+
+    sql, args := sb.Build()
+
+    rows, err := r.pool.Query(ctx, sql, args...)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    aggSubs, err := pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByName[models.AggSubscriptions])
+    if err != nil {
+        return nil, err
+    }
+    return aggSubs, nil
+}

@@ -180,9 +180,27 @@ func (c *SubscriptionsController) Destroy(w http.ResponseWriter, r *http.Request
     w.WriteHeader(http.StatusNoContent)
 }
 
-// func (c *SubscriptionsController) Aggregate(w http.ResponseWriter, r *http.Request) {
-    
-// }
+func (c *SubscriptionsController) Aggregate(w http.ResponseWriter, r *http.Request) {
+    filters := models.Filter{}
+    schema.NewDecoder().Decode(&filters, r.URL.Query())
+
+    if err := validator.New().Struct(filters); err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    aggSubs, err := c.services.SubService.Aggregate(r.Context(), filters)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+
+    resp := Data{Data: aggSubs}
+    json.NewEncoder(w).Encode(resp)
+}
 
 type Data struct {
     Data any `json:"data"`

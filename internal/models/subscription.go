@@ -9,7 +9,7 @@ type Subscription struct {
 }
 
 type AggSubscriptions struct {
-    sumPrice int `json:"sum_price"`
+    SumPrice int64 `json:"sum_price" db:"sum_price"`
 }
 
 type Filter struct {
