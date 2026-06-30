@@ -43,7 +43,7 @@ func main() {
 
     s := http.Server{
         Addr:    cfg.Addr(),
-        Handler: controllers.LoggingMiddleware(logger, mux),
+        Handler: controllers.LoggingMiddleware(logger, controllers.CorsMiddleware(mux)),
     }
 
     logger.Info("server starting", "addr", cfg.Addr())

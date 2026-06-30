@@ -156,7 +156,7 @@ func (r *SubscriptionRepo) Destroy(ctx context.Context, id uint) error {
 
 func (r *SubscriptionRepo) Aggregate(ctx context.Context, filters models.Filter) (*models.AggSubscriptions, error) {
     sb := sqlbuilder.PostgreSQL.NewSelectBuilder()
-    sb.Select("SUM(price)::bigint AS sum_price")
+    sb.Select("COALESCE(SUM(price)::bigint, 0) AS sum_price")
     sb.From("subscriptions")
 
     if filters.UserId != nil {

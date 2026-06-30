@@ -2,8 +2,11 @@ openapi: 3.1.0
 info:
   title: "Subscription aggregator"
   version: 0.0.1
+servers:
+  - url: http://localhost:8080
+    description: Локальный сервер
 paths:
-  /api/v1/subscriptions:
+  /subscriptions:
     get:
       description: Получение списка подписок
       parameters:
@@ -83,7 +86,7 @@ paths:
         "500":
           $ref: "#/components/responses/internal_error"
  
-  /api/v1/subscriptions/{id}:
+  /subscriptions/{id}:
     get:
       description: Получение подписки по id
       responses:
@@ -147,7 +150,7 @@ paths:
         schema:
           type: string
 
-  /api/v1/subscriptions/agg:
+  /subscriptions/agg:
     get:
       summary: Получение суммарной стоимости подписок
       description: Получение суммарной стоимости подписок за выбранный период с фильтрацией по id пользователя и названию подписки
@@ -331,8 +334,7 @@ components:
           examples:
             base:
               value:
-                data:
-                  service_name: "Yandex Plus"
-                  price: 400
-                  user_id: "60601fee-2bf1-4721-ae6f-7636e79a0cba"
-                  start_date: "07-2025"
+                service_name: "Yandex Plus"
+                price: 400
+                user_id: "60601fee-2bf1-4721-ae6f-7636e79a0cba"
+                start_date: "07-2025"
