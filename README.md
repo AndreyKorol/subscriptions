@@ -129,6 +129,8 @@ HTTP Request
   ↓
 LoggingMiddleware (логирование метода, пути, статуса, времени)
   ↓
+CorsMiddleware (CORS-заголовки, обработка OPTIONS)
+  ↓
 Controller (парсинг, валидация, JSON)
   ↓
 Service (бизнес-логика)
@@ -149,7 +151,8 @@ PostgreSQL
 │   │   └── validation.go        # Трансляция validator.ValidationErrors в JSON
 │   ├── controllers/
 │   │   ├── subscriptions.go     # HTTP-обработчики
-│   │   ├── middleware.go        # Логирующая middleware
+│   │   ├── logging.go           # Логирующая middleware
+│   │   ├── cors.go              # CORS middleware
 │   │   └── requests.go          # DTO для запросов
 │   ├── migrations/              # SQL-миграции
 │   ├── models/subscription.go   # Модели данных
