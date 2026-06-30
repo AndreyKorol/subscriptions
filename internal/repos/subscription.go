@@ -2,13 +2,13 @@ package repos
 
 import(
     "time"
-    "errors"
-    "context"
-    "log/slog"
-    "github.com/AndreyKorol/subscriptions/internal/models"
-    "github.com/huandu/go-sqlbuilder"
-    "github.com/jackc/pgx/v5/pgxpool"
-    "github.com/jackc/pgx/v5"
+	"context"
+	"log/slog"
+	"github.com/AndreyKorol/subscriptions/internal/errs"
+	"github.com/AndreyKorol/subscriptions/internal/models"
+	"github.com/huandu/go-sqlbuilder"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
 )
 
 type SubscriptionRepo struct {
@@ -147,11 +147,11 @@ func (r *SubscriptionRepo) Destroy(ctx context.Context, id uint) error {
         r.logger.Error("Destroy query failed", "id", id, "error", err)
         return err
     }
-    if result.RowsAffected() == 0 {
-        r.logger.Warn("Destroy no rows affected", "id", id)
-        return errors.New("No rows affected")
-    }
-    return nil
+	if result.RowsAffected() == 0 {
+		r.logger.Warn("Destroy no rows affected", "id", id)
+		return errs.NotFound("subscription not found")
+	}
+	return nil
 }
 
 func (r *SubscriptionRepo) Aggregate(ctx context.Context, filters models.Filter) (*models.AggSubscriptions, error) {

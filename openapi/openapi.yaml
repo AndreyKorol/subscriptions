@@ -53,6 +53,10 @@ paths:
                           price: 1000
                           user_id: "60601fee-2bf1-4721-ae6f-7636e79a0cba"
                           start_date: "09-2025"
+        "400":
+          $ref: "#/components/responses/bad_request"
+        "500":
+          $ref: "#/components/responses/internal_error"
 
     post:
       description: Создание подписки
@@ -74,7 +78,11 @@ paths:
                       price: 400
                       user_id: "60601fee-2bf1-4721-ae6f-7636e79a0cba"
                       start_date: "07-2025"
-
+        "400":
+          $ref: "#/components/responses/bad_request"
+        "500":
+          $ref: "#/components/responses/internal_error"
+ 
   /api/v1/subscriptions/{id}:
     get:
       description: Получение подписки по id
@@ -85,6 +93,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/member/subscription"
+        "400":
+          $ref: "#/components/responses/bad_request"
+        "404":
+          $ref: "#/components/responses/not_found"
+        "500":
+          $ref: "#/components/responses/internal_error"
     patch:
       description: Обновление подписки по id
       requestBody:
@@ -105,12 +119,24 @@ paths:
                       price: 400
                       user_id: "60601fee-2bf1-4721-ae6f-7636e79a0cba"
                       start_date: "07-2025"
+        "400":
+          $ref: "#/components/responses/bad_request"
+        "404":
+          $ref: "#/components/responses/not_found"
+        "500":
+          $ref: "#/components/responses/internal_error"
 
     delete:
       description: Удаление подписки по id
       responses:
         "204":
           description: Успешное удаление подписки по id
+        "400":
+          $ref: "#/components/responses/bad_request"
+        "404":
+          $ref: "#/components/responses/not_found"
+        "500":
+          $ref: "#/components/responses/internal_error"
 
     parameters:
       - name: id
@@ -163,9 +189,33 @@ paths:
                     data:
                       items:
                         - sum_price: 1400
+        "400":
+          $ref: "#/components/responses/bad_request"
+        "500":
+          $ref: "#/components/responses/internal_error"
 
 components:
   schemas:
+    error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum: [NOT_FOUND, BAD_REQUEST, INTERNAL_ERROR]
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
     member:
       subscription:
         type: object
@@ -212,6 +262,54 @@ components:
       properties:
         sum_price:
           type: integer
+
+  responses:
+    not_found:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+          example:
+            error:
+              code: NOT_FOUND
+              message: "subscription not found"
+
+    bad_request:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+          examples:
+            simple:
+              summary: Simple bad request
+              value:
+                error:
+                  code: BAD_REQUEST
+                  message: "invalid id"
+            validation:
+              summary: Validation error
+              value:
+                error:
+                  code: BAD_REQUEST
+                  message: "request validation failed"
+                  details:
+                    - field: service_name
+                      message: "field is required"
+                    - field: price
+                      message: "must be 0 or greater"
+
+    internal_error:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: "internal server error"
 
   requestBodies:
     create:

@@ -1,13 +1,15 @@
 package controllers
 
 import(
-    "net/http"
-    "log/slog"
+    "errors"
     "context"
     "strconv"
+    "net/http"
+    "log/slog"
     "encoding/json"
     "github.com/gorilla/schema"
     "github.com/go-playground/validator/v10"
+    "github.com/AndreyKorol/subscriptions/internal/errs"
     "github.com/AndreyKorol/subscriptions/internal/models"
     "github.com/AndreyKorol/subscriptions/internal/services"
 )
@@ -38,22 +40,19 @@ func (c *SubscriptionsController) Index(w http.ResponseWriter, r *http.Request) 
 
     if err := validator.New().Struct(filters); err != nil {
         c.logger.Error("invalid filters", "error", err)
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        respondError(w, errs.BadRequest("request validation failed", errs.FromValidator(err)))
         return
     }
 
     subs, err := c.services.SubService.Index(r.Context(), filters)
     if err != nil {
         c.logger.Error("Index service error", "error", err)
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        respondError(w, err)
         return
     }
 
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
-
     resp := CollectionData{Data: Items{Items: subs}}
-    json.NewEncoder(w).Encode(resp)
+    respondJSON(w, http.StatusOK, resp)
 
     c.logger.Info("Index completed", "count", len(subs))
 }
@@ -69,32 +68,24 @@ func (c *SubscriptionsController) Show(w http.ResponseWriter, r *http.Request) {
     id, err := strconv.Atoi(idStr)
     if err != nil {
         c.logger.Error("invalid id format", "id", idStr, "error", err)
-        http.Error(w, "invalid id", http.StatusBadRequest)
+        respondError(w, errs.BadRequest("invalid id"))
         return
     }
     if err := validator.New().Var(id, "gte=1"); err != nil {
         c.logger.Error("id validation failed", "id", id, "error", err)
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        respondError(w, errs.BadRequest("request validation failed", errs.FromValidator(err)))
         return
     }
 
     sub, err := c.services.SubService.Show(r.Context(), uint(id))
     if err != nil {
         c.logger.Error("Show service error", "id", id, "error", err)
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        respondError(w, err)
         return
     }
-    if sub == nil {
-        c.logger.Warn("subscription not found", "id", id)
-        http.Error(w, "subscription not found", http.StatusNotFound)
-        return
-    }
-
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
 
     resp := Data{Data: sub}
-    json.NewEncoder(w).Encode(resp)
+    respondJSON(w, http.StatusOK, resp)
 
     c.logger.Info("Show completed", "id", id)
 }
@@ -110,36 +101,33 @@ func (c *SubscriptionsController) Create(w http.ResponseWriter, r *http.Request)
     err := json.NewDecoder(r.Body).Decode(createSubRequest)
     if err != nil {
         c.logger.Error("failed to decode request body", "error", err)
-        http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+        respondError(w, errs.BadRequest("invalid JSON body"))
         return
     }
     c.logger.Debug("request decoded", "body", createSubRequest)
 
     if err = validator.New().Struct(createSubRequest); err != nil {
         c.logger.Error("validation failed", "error", err)
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        respondError(w, errs.BadRequest("request validation failed", errs.FromValidator(err)))
         return
     }
 
     subscription, err := createSubRequest.ToModel()
     if err != nil {
         c.logger.Error("ToModel conversion failed", "error", err)
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        respondError(w, errs.BadRequest(err.Error()))
         return
     }
 
     sub, err := c.services.SubService.Create(r.Context(), subscription)
     if err != nil {
         c.logger.Error("Create service error", "error", err)
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        respondError(w, err)
         return
     }
 
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
-
     resp := Data{Data: sub}
-    json.NewEncoder(w).Encode(resp)
+    respondJSON(w, http.StatusOK, resp)
 
     c.logger.Info("Create completed", "id", sub.Id)
 }
@@ -155,12 +143,12 @@ func (c *SubscriptionsController) Update(w http.ResponseWriter, r *http.Request)
     id, err := strconv.Atoi(idStr)
     if err != nil {
         c.logger.Error("invalid id format", "id", idStr, "error", err)
-        http.Error(w, "invalid id", http.StatusBadRequest)
+        respondError(w, errs.BadRequest("invalid id"))
         return
     }
     if err := validator.New().Var(id, "gte=1"); err != nil {
         c.logger.Error("id validation failed", "id", id, "error", err)
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        respondError(w, errs.BadRequest("request validation failed", errs.FromValidator(err)))
         return
     }
 
@@ -168,26 +156,21 @@ func (c *SubscriptionsController) Update(w http.ResponseWriter, r *http.Request)
     err = json.NewDecoder(r.Body).Decode(updateSubRequest)
     if err != nil {
         c.logger.Error("failed to decode request body", "error", err)
-        http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+        respondError(w, errs.BadRequest("invalid JSON body"))
         return
     }
     c.logger.Debug("request decoded", "body", updateSubRequest)
 
     if err = validator.New().Struct(updateSubRequest); err != nil {
         c.logger.Error("validation failed", "error", err)
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        respondError(w, errs.BadRequest("request validation failed", errs.FromValidator(err)))
         return
     }
 
     existingSub, err := c.services.SubService.Show(r.Context(), uint(id))
     if err != nil {
         c.logger.Error("Show service error (pre-update)", "id", id, "error", err)
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-        return
-    }
-    if existingSub == nil {
-        c.logger.Warn("subscription not found for update", "id", id)
-        http.Error(w, "subscription not found", http.StatusNotFound)
+        respondError(w, err)
         return
     }
 
@@ -196,15 +179,12 @@ func (c *SubscriptionsController) Update(w http.ResponseWriter, r *http.Request)
     sub, err := c.services.SubService.Update(r.Context(), existingSub)
     if err != nil {
         c.logger.Error("Update service error", "id", id, "error", err)
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        respondError(w, err)
         return
     }
 
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
-
     resp := Data{Data: sub}
-    json.NewEncoder(w).Encode(resp)
+    respondJSON(w, http.StatusOK, resp)
 
     c.logger.Info("Update completed", "id", id)
 }
@@ -220,19 +200,19 @@ func (c *SubscriptionsController) Destroy(w http.ResponseWriter, r *http.Request
     id, err := strconv.Atoi(idStr)
     if err != nil {
         c.logger.Error("invalid id format", "id", idStr, "error", err)
-        http.Error(w, "invalid id", http.StatusBadRequest)
+        respondError(w, errs.BadRequest("invalid id"))
         return
     }
     if err = validator.New().Var(id, "gte=1"); err != nil {
         c.logger.Error("id validation failed", "id", id, "error", err)
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        respondError(w, errs.BadRequest("request validation failed", errs.FromValidator(err)))
         return
     }
 
     err = c.services.SubService.Destroy(r.Context(), uint(id))
     if err != nil {
         c.logger.Error("Destroy service error", "id", id, "error", err)
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        respondError(w, err)
         return
     }
 
@@ -253,22 +233,19 @@ func (c *SubscriptionsController) Aggregate(w http.ResponseWriter, r *http.Reque
 
     if err := validator.New().Struct(filters); err != nil {
         c.logger.Error("invalid filters", "error", err)
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        respondError(w, errs.BadRequest("request validation failed", errs.FromValidator(err)))
         return
     }
 
     aggSubs, err := c.services.SubService.Aggregate(r.Context(), filters)
     if err != nil {
         c.logger.Error("Aggregate service error", "error", err)
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        respondError(w, err)
         return
     }
 
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
-
     resp := Data{Data: aggSubs}
-    json.NewEncoder(w).Encode(resp)
+    respondJSON(w, http.StatusOK, resp)
 
     c.logger.Info("Aggregate completed", "sum_price", aggSubs.SumPrice)
 }
@@ -283,4 +260,24 @@ type CollectionData struct {
 
 type Items struct {
     Items []*models.Subscription `json:"items"`
+}
+
+type errorResponse struct {
+	Error *errs.Error `json:"error"`
+}
+
+func respondJSON(w http.ResponseWriter, status int, data any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(data)
+}
+
+func respondError(w http.ResponseWriter, err error) {
+	if error, ok := errors.AsType[*errs.Error](err); ok {
+		respondJSON(w, error.Status(), errorResponse{Error: error})
+		return
+	}
+	respondJSON(w, http.StatusInternalServerError, errorResponse{
+		Error: errs.Internal("internal server error"),
+	})
 }
